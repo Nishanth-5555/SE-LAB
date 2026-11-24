@@ -7,6 +7,14 @@ FPS=60
 BG=(20,15,30)
 GROUND_Y=HEIGHT+200
 
+# lava speed / surge tuning
+LAVA_MAX_RISE=1.2
+FIRST_SURGE=360        # frames before the first surge (6 s)
+SURGE_INTERVAL=600     # a surge every 10 s after that
+SURGE_DURATION=120     # each surge lasts 2 s
+SURGE_WARNING=90       # 1.5 s warning before a surge
+SURGE_MULT=2.5         # lava rises this many times faster during a surge
+
 class GameEngine:
     def __init__(self):
         pygame.init()
@@ -30,6 +38,9 @@ class GameEngine:
         self.won=False
         self.top_y=self.platforms[-1].y
         self.frame=0
+        self.next_surge=FIRST_SURGE
+        self.surge_left=0
+        self.current_rise=self.lava_rise
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -53,8 +64,15 @@ class GameEngine:
         self.platforms=[p for p in self.platforms if not p.gone]
         target=self.player.rect.centery-HEIGHT//2
         if target<self.cam_y: self.cam_y=target
-        self.lava_y-=self.lava_rise
-        self.lava_rise=min(1.2,self.lava_rise+0.0003)
+        # periodic lava surges briefly multiply the rise speed
+        if self.frame>=self.next_surge:
+            self.surge_left=SURGE_DURATION
+            self.next_surge+=SURGE_INTERVAL
+        surging=self.surge_left>0
+        if surging: self.surge_left-=1
+        self.current_rise=self.lava_rise*(SURGE_MULT if surging else 1)
+        self.lava_y-=self.current_rise
+        self.lava_rise=min(LAVA_MAX_RISE,self.lava_rise+0.0003)
         self.score=max(0,(GROUND_Y-self.player.rect.y)//10)
         self.frame+=1
         if self.player.rect.bottom>=self.lava_y:
@@ -67,7 +85,8 @@ class GameEngine:
         for p in self.platforms:
             p.draw(self.screen,self.cam_y,self.frame)
         self.player.draw(self.screen,self.cam_y)
-        draw_lava(self.screen,self.lava_y,self.cam_y,WIDTH,HEIGHT,self.frame)
+        draw_lava(self.screen,self.lava_y,self.cam_y,WIDTH,HEIGHT,self.frame,self.surge_left>0)
+        self._draw_danger_hud()
         sc=self.font.render(f"Height: {self.score}m  R=Restart",True,(220,200,180))
         self.screen.blit(sc,(8,10))
         if self.game_over:
@@ -75,6 +94,39 @@ class GameEngine:
         if self.won:
             self._msg("ESCAPED!",(80,220,100))
         pygame.display.flip()
+
+    def _draw_danger_hud(self):
+        # vertical danger meter on the right: how fast the lava is rising right now
+        x,y,w,h=WIDTH-34,50,18,200
+        pygame.draw.rect(self.screen,(40,30,45),(x,y,w,h),border_radius=4)
+        frac=min(1.0,self.current_rise/(LAVA_MAX_RISE*SURGE_MULT))
+        fill=int(h*frac)
+        if frac<0.35: col=(80,200,90)
+        elif frac<0.6: col=(230,200,60)
+        else: col=(235,70,40)
+        pygame.draw.rect(self.screen,col,(x,y+h-fill,w,fill),border_radius=4)
+        pygame.draw.rect(self.screen,(200,190,180),(x,y,w,h),1,border_radius=4)
+        small=pygame.font.SysFont("monospace",14,bold=True)
+        lbl=small.render("LAVA",True,(220,200,180))
+        self.screen.blit(lbl,(x+w//2-lbl.get_width()//2,y+h+4))
+        spd=small.render(f"x{self.current_rise/0.4:.1f}",True,col)
+        self.screen.blit(spd,(x+w//2-spd.get_width()//2,y+h+20))
+        # distance between the player's feet and the lava
+        gap=max(0,int(self.lava_y-self.player.rect.bottom)//10)
+        gcol=(235,70,40) if gap<15 else (220,200,180)
+        g=self.font.render(f"Lava: {gap}m below",True,gcol)
+        self.screen.blit(g,(8,38))
+        # surge warning / active banner
+        if self.game_over or self.won: return
+        until=self.next_surge-self.frame
+        text=None
+        if self.surge_left>0:
+            text="LAVA SURGE!"
+        elif 0<until<=SURGE_WARNING:
+            text="SURGE INCOMING"
+        if text and (self.frame//8)%2==0:
+            t=self.font.render(text,True,(255,90,40))
+            self.screen.blit(t,(WIDTH//2-t.get_width()//2,72))
 
     def _msg(self,text,color):
         ov=pygame.Surface((WIDTH,HEIGHT),pygame.SRCALPHA)

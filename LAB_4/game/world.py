@@ -7,6 +7,7 @@ PLATFORM_COLOR = (100, 80, 50)
 CRUMBLE_COLOR = (150, 110, 90)
 SPRING_COLOR = (70, 200, 120)
 LAVA_COLOR = (220, 60, 20)
+LAVA_SURGE_COLOR = (255, 110, 20)
 
 CRUMBLE_CHANCE = 0.22
 CRUMBLE_FRAMES = 45  # ~0.75 s of shaking before the platform disintegrates
@@ -90,16 +91,17 @@ def generate_platforms(width, base_y, count=30):
     return plats
 
 
-def draw_lava(screen, lava_y, cam_y, width, height, frame):
+def draw_lava(screen, lava_y, cam_y, width, height, frame, surging=False):
     ly = int(lava_y - cam_y)
     if ly < height:
         # lava surface wave
         pts = [(0, ly)]
         for x in range(0, width + 20, 20):
-            pts.append((x, ly + int(math.sin(x * 0.08 + frame * 0.1) * 8)))
+            amp = 14 if surging else 8  # rougher, taller waves during a surge
+            pts.append((x, ly + int(math.sin(x * 0.08 + frame * 0.1) * amp)))
         pts.append((width, height))
         pts.append((0, height))
-        pygame.draw.polygon(screen, LAVA_COLOR, pts)
+        pygame.draw.polygon(screen, LAVA_SURGE_COLOR if surging else LAVA_COLOR, pts)
         # glow
         s = pygame.Surface((width, 30), pygame.SRCALPHA)
         for i in range(15):
