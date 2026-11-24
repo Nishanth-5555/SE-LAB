@@ -20,8 +20,10 @@ class GameEngine:
     def reset(self):
         self.platforms=generate_platforms(WIDTH,GROUND_Y)
         self.player=Player(WIDTH//2-16,GROUND_Y-50)
-        self.cam_y=0
-        self.lava_y=GROUND_Y+60
+        # start the camera on the player so the ground/start area is visible
+        self.cam_y=self.player.rect.centery-int(HEIGHT*0.65)
+        # give the player a few seconds before the lava reaches the ground
+        self.lava_y=GROUND_Y+180
         self.lava_rise=0.4
         self.score=0
         self.game_over=False
