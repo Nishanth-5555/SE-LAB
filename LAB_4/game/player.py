@@ -12,6 +12,7 @@ class Player:
         self.y = float(y)  # sub-pixel vertical position
         self.vel_y = 0
         self.on_ground = False
+        self.landed_on = None  # platform rect stood on this frame (if any)
         self.color = (60, 160, 220)
 
     def update(self, keys, platforms, width):
@@ -36,6 +37,7 @@ class Player:
         # above the platform's top edge last frame and are at/below it now.
         # Jumping up through a platform from below never snaps the player.
         self.on_ground = False
+        self.landed_on = None
         if self.vel_y >= 0:
             landing = None
             for p in platforms:
@@ -48,6 +50,7 @@ class Player:
                 self.y = float(self.rect.y)
                 self.vel_y = 0
                 self.on_ground = True
+                self.landed_on = landing
 
     def draw(self, screen, cam_y):
         dr = self.rect.move(0, -int(cam_y))
