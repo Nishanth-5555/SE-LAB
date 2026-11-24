@@ -94,3 +94,17 @@ Submission is only the following three things:
 - [] A 10-second video of gameplay **before** your changes, showing the bug/broken behavior
 - [] A 10-second video of gameplay **after** your changes, showing the bug fixed and the new features working
 - [] The Chat/LLM used page link, with the complete chat history
+
+---
+
+## Lab 4 Submission (PES1UG24AM179)
+
+- `videos/before.mp4` - 10 s of the original game (before any changes)
+- `videos/after.mp4` - 10 s after the fix and all features
+- `chat_history.pdf` - LLM chat history
+
+### Changes made
+1. **Task 1 (bug fix):** landing now only happens when falling and the feet crossed the platform's top edge this frame (true one-way platforms, no snapping from below, stable `on_ground`). The camera starts on the player, and the lava starts slightly lower.
+2. **Task 2:** cracked crumbling platforms shake and disintegrate ~0.75 s after you land on them.
+3. **Task 3:** green spring platforms launch the player with extra upward velocity.
+4. **Task 4:** a danger meter shows the lava's rise speed and how far below it is; periodic lava surges (with a warning) briefly speed the lava up 2.5x.
