@@ -1,6 +1,6 @@
 import pygame
 from game.player import Player
-from game.world import generate_platforms, draw_lava
+from game.world import generate_platforms, draw_lava, SPRING_VELOCITY
 
 WIDTH,HEIGHT=500,640
 FPS=60
@@ -44,6 +44,10 @@ class GameEngine:
         for p in self.platforms:
             if p.rect is self.player.landed_on:
                 p.on_landed()
+                if p.kind=="spring":
+                    # high-velocity launch instead of a normal landing
+                    self.player.vel_y=SPRING_VELOCITY
+                    self.player.on_ground=False
             p.update()
         # crumbled platforms disappear for good
         self.platforms=[p for p in self.platforms if not p.gone]
